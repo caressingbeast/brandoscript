@@ -1,3 +1,9 @@
+###
+Design notes
+- No type inference for now, all types must be explicit
+###
+
+
 # This is a example of a single line comment
 
 ###
@@ -6,13 +12,15 @@ This is an example of a multiline comment
 
 ###
 Variable declaration
+All variables are immutable by default. You must use the `mut` keyword to change a variable's value
+This applies to maps, arrays, tuples, structs (instances, not the struct itself)
 ###
 
 str name = "Brandon"
 num age = 41
 num[] scores = [50, 100, 75] # access = scores[0]
 str[] words = ["test1", "test2", "test3"]
-bool isCool = true # could be false (no null or nil or undefined in BrandoScript)
+bool isCool = true # could be false (no null or undefined in BrandoScript)
 (num, str) person = (41, "Brandon") # access = person[0]
 User[] user = [
   User { id: 1, name: "Brandon" }
@@ -21,51 +29,65 @@ mut unknown[] values = []
 
 (num or str)[] values = ["Brandon", 41, "old"]
 
-str greet(str name) {
-  "Hello, \(name)!"
-}
-
-(num)(num, num) add = (num a, num b) {
+fn((num, num): num) add = (num a, num b) {
   a + b
 }
 
-`mut` keyword means the variable is mutable; immutable by default
+# `mut` keyword means the variable is mutable; immutable by default
 mut num age = 41
 age = 42
 
-`unknown` keyword means the type is unknown and will require type guards
+# `unknown` keyword means the type is unknown and will require type guards
+# unknown val = <ApiResponse>
 
 ###
 Types
 ###
 
-type generic Result(O, E) = ok(O) or err(E)
+generic type Maybe(Y) = yes(Y) or no
+generic type Result(O, E) = ok(O) or err(E)
 
-type AddFn = (num)(num, num)
+type AddFn = fn((num, num): num)
 AddFn add = (num a, num b) {
   a + b
 }
+
+type UserId = num or str
+Maybe(UserId) id = user at "id" # user is a map (`at` syntax is only available on maps)
 
 ###
 Maps
 ###
 
-# map(<KeyType>, <ValueType>)
-map(str, unknown) user = {
-  name: "Brandon",
+# Map(ValueType) # under the hood, BS infers Map(KeyType = "string", ValueType)
+Map(unknown) user = {
   age: 41,
-  isAdmin: true
+  isAdmin: true,
+  name: "Brandon"
 }
-maybe str name = user at "name"
-if (name is str) {
+
+Maybe(str) name = user at "name"
+
+if name is str {
   print("Hello, \(name)!")
 }
 
-# To add or update, the entire map must be mut (no support for fine-grained mut control)
-mut map(str, str) simple = {
+# To add or update, the entire map must be `mut` (no support for fine-grained `mut` control yet)
+mut Map(str) simple = {
   key1: "value1"
 }
 simple at "key2" = "value2"
+
+if "name" in user {
+  print("`name` exists in user!")
+}
+
+type MapValues = bool or num or str
+Map(MapValues) mixedMap = {
+  id: 1,
+  isCool: true, # always
+  name: "Brandon"
+}
 
 ###
 Structs
@@ -74,18 +96,20 @@ Structs
 struct User = {
   num id
   str name
-  (num or str) thing
+  (num or str) status
 
   str greet() {
     "Hello, \(self.name)!"
   }
 
+  # Remember, any instance of this struct must be `mut`
   void rename(str updatedName) {
     self.name = updatedName
   }
 }
 
-User user = User {
+# The instance is marked `mut`, not the struct itself
+mut User user = User {
   id: 1,
   name: "Brandon"
 }
@@ -101,10 +125,10 @@ struct Error {
   str message
 }
 
+# This is for easy reference. In reality, `Result` is a built-in generic type
 generic type Result(O, E) = ok(O) or err(E)
-type MathResult = Result(num, Error)
 
-MathResult divide(num a, num b) {
+Result(num, Error) divide(num a, num b) {
   if b equals 0 {
     return err(Error { code: 1, message: "Cannot divide by 0" })
   }
@@ -112,76 +136,64 @@ MathResult divide(num a, num b) {
   ok(a / b)
 }
 
-MathResult divideAndProcess(num a, num b) {
-  attempt {
-    num result = divide(a, b)
-    ok(result)
-  }
-
-  handle(e) {
-    err(e)
-  }
-}
-
-MathResult res = divideAndProcess(10, 0)
-
-match res {
-  ok(val) {
-    print("Result: \(val)")
-  }
-  err(e) {
-    print("Error: \(error)")
-  }
+attempt {
+  num res = divide(10, 0)
+  print(res)
+} handle(Error e) {
+  print("Error: \(e.message)")
 }
 
 # Default values
 struct User {
   num id
-  str name = "Test" # default value
-  bool isAdmin = false
+  bool isAdmin = false  # default value
+  str name
 }
 
 # Extending structs
 struct AdminUser extends User {
-  bool isAdmin = true # can override a default value
+  bool isAdmin = true # can override a default value on parent
   str[] roles = ["admin"] # add new properties/methods not on parent
 }
 
-# Struct shape (built-in, hidden, readonly property)
-struct User {
-  num id
-  str name
-}
-
-# User.shape = { num id, str name }
-
 ###
 Destructuring
-By default, destructuring copies and does not remove
+By default, destructuring copies and does not remove from the original structure
+Only maps and structs support the `as` syntax for renaming
+Using the `rest` keyword requires a variable name (e.g. "as remaining")
 ###
 
 num[] coords = [1, 2]
-[num as x, num as y] = coords
+[num x, num y] = coords
 # x = 1, y = 2
 
 { num id, str name } = user
 # id = user.id, name = user.name
 
 (num, num) coords = (1, 2)
-(num as x, num as y) = coords
+(num x, num y) = coords
 # x = 1, y = 2
 
-{ num id as userId, str name as userName } = coords
+{ num id as userId, str name as userName } = user
 # userId = user.id, userName = user.name
 
+# Rest operators
 num[] numbers = [1, 2, 3, 4, 5]
-[num as x, rest num[] as remaining] = numbers
+[num x, rest num[] as remaining] = numbers
 
+User user = User { id: 1, name: "Brandon" }
 { num id, rest unknown as remaining } = user
 
-# Using Omit
-import { Omit } from std.struct
-{ num id, rest Omit(User, ["id"]) as remaining } = user
+Map(unknown) mapUser = { id: 1, age: 41, name: "Brandon" }
+{ Maybe(num) id, num age = 18 } = mapUser # default values negate the need for maybe and checking
+print("age = \(age)")
+if id is num {
+  print("id = \(id)")
+}
+
+# Using omit (stdlib)
+import { omit } from std.struct
+{ num id, rest omit(User, ["id"]) as remaining } = user
 
 ###
 If/Else/Etc.
@@ -193,25 +205,30 @@ if user.id equals 1 {
   print("Goodbye")
 }
 
+# Primitives check value; structs, maps, arrays, tuples do deep checking
 if not user.id equals 1 {
   print("Not user 1!")
 }
 
+# Type checking (structural)
 if user.id is num {
   print("User ID is a number")
 }
 
-# Type checking
 if user is User {
   print("user is an instance of User!")
 }
 
-if (user.id equals 1 and user.name equals "Brandon") {
+if not id is num {
+  print("id is not a num!")
+}
+
+if user.id equals 1 and user.name equals "Brandon" {
   print("You are Brandon!")
 }
 
-if (user.name equals "Brandon" or user.name equals "Brando") {
-  print("You are cool!")
+if user.name equals "Brandon" or user.name equals "Brando" {
+  print("You are one of us!")
 }
 
 bool isActive = true
@@ -219,10 +236,20 @@ if not isActive {
   print("Go outside, nerd!")
 }
 
+# Looping over keys is only available for maps, not structs
 for str key in user {
-  if not user at key equals "Brandon" {
-    print("You're not Brandon!")
+  Maybe(unknown) val = user at key
+
+  if val is str {
+    if not val equals "Brandon" {
+      print("You're not Brandon!")
+    }
   }
+}
+
+# `in` syntax is also only available for maps
+if "name" in user {
+  print("Found `name`")
 }
 
 if key in user {
@@ -241,6 +268,15 @@ Math
 ###
 
 # BrandoScript supports all standard mathematical notation (+ - / * () > < >= <=)
+# No overloading
+num sum = 3 + 3
+num difference = 3 - 3
+num product = 3 * 3
+num quotient = 3 / 3
+num advanced = (3 + 3) - (3 / 3) * 3 # follows order of operations
+
+if sum < difference { # do something }
+if sum >= product { # do something }
 
 # Modular checks uses the "mod" keyword
 if 2 mod 2 equals 0 {
@@ -251,9 +287,10 @@ if 2 mod 2 equals 0 {
 Maybe
 ###
 
+# This returns a tuple if it returns "yes"
 import { length } from std.arr
-maybe (num, num) find(num[] arr, num target) {
-  for num i from 0 until arr.length(arr) {
+Maybe((num, num)) find(num[] arr, num target) {
+  for num i from 0 until length(arr) {
     if arr[i] equals target {
       return yes((i, target))
     }
@@ -261,7 +298,7 @@ maybe (num, num) find(num[] arr, num target) {
   return no
 }
 
-maybe (num, num) result = find([1, 2, 3], 3)
+Maybe((num, num)) result = find([1, 2, 3], 3)
 
 if result is yes((idx, target)) {
   print("Target \(target) was found at index \(idx)!")
@@ -278,18 +315,15 @@ match result {
 Functions
 ###
 
-# Typing
-(ReturnType)(ArgType...) # (num)(str, num)
+# Typing for functions (not methods in a struct)
+fn((ArgType/s): ReturnType) # fn((num): str)
 
-str greet(str name) {
-  "Hello, \(name)!"
-}
-
-# makeCounter returns a function that returns a number and accepts no args
-((num)())(num) makeCounter(num start) {
+# makeCounter accepts a `num` and returns a function that returns a `num` but accepts no args
+type MakeCounterFn = fn((num): fn((): num))
+MakeCounterFn makeCounter = (num start) {
   mut num count = start
 
-  num next() {
+  fn((): num) next = () {
     count = count + 1
     return count # explicit return
   }
@@ -303,18 +337,18 @@ str greet(str name = "World") {
 
 # Generic functions
 import { push } from std.arr
-
-generic O[] transform(I, O)(I[] arr, (O)(I) transformer) {
+type TransformerFn = fn((I): O)
+generic fn((I[], TransformerFn): O[]) transform(I, O)(I[] arr, TransformerFn transformer) {
   mut O[] result = []
 
-  for I item in array {
+  for I item in arr {
     result = push(result, transformer(item))
   }
 
   result
 }
 
-generic bool includes(T)(T[] arr, T element) {
+generic fn((T[], T): bool) includes(T)(T[] arr, T element) {
   for T item in arr {
     if item equals element {
       return true
@@ -327,12 +361,13 @@ num[] numbers = [1, 2, 3]
 bool found = includes(num)(numbers, 3)
 
 # Unions as args/return types
-(str or num) doTheThing((str or num) val) {
+type DoubleOrHelloFn = fn((str or num): str or num)
+DoubleOrHelloFn doubleOrHello = ((str or num) val) {
   if val is num {
-    return num * 2
+    return val * 2
   }
 
-  return "Hello, \(val)!"
+  "Hello, \(val)!"
 }
 
 ###
@@ -377,8 +412,8 @@ for num score in scores {
   print(score)
 }
 
-# structs
-User user = { id: 1, name: "Brandon" }
+# maps
+Map(unknown) user = { id: 1, name: "Brandon" }
 for str key in user {
   print(user at key)
 }
@@ -404,6 +439,49 @@ for num i from 0 to 10 {
 }
 
 ###
+Async/await
+###
+struct Error {
+  str message
+  num status
+}
+
+struct User {
+  num id
+  str name
+}
+
+generic type Maybe(Y) = yes(Y) or no
+generic type Result(O, E) = ok(O) or err(E) # built in but included here for reference
+type GetUserResult = Result(User, Error)
+
+async fn((str): GetUserResult) getUser = (str userId) {
+  attempt {
+    await unknown res = fetch("http://example.com/users/\(userId)")
+    mut Maybe(unknown) raw = no
+
+    if "json" in res {
+      raw = yes(await res.json())
+    }
+    
+    if raw is yes(Map(unknown) data) and
+       "id" in raw and raw at "id" is num and 
+       "name" in raw and raw at "name" is str {
+      User user = User {
+        id: raw.id,
+        name: raw.name
+      }
+
+      return ok(user)
+    } else {
+      return err(Error { message: "error", status: 0 })
+    }
+  } handle(unknown err) {
+    return err(Error { message: "error", status: 0 })
+  }
+}
+
+###
 Importing
 ###
 
@@ -413,6 +491,7 @@ import { thing as otherThing } from "./things.bs"
 import * as numLib from std.num
 
 export str bar() { "Hello!" }
+export type ExportType = bool or num or str
 
 ###
 Standard Library
@@ -454,6 +533,12 @@ Arrays
 ###
 
 ###
+Maps
+- getAtKey
+- lookup # lookup(user, "profile.location.address.city")
+
+###
 Structs
-- keys
+- omit
+- lookup
 ###
