@@ -14,10 +14,10 @@ num[] scores = [50, 100, 75] # access = scores[0]
 str[] words = ["test1", "test2", "test3"]
 bool isCool = true # could be false (no null or nil or undefined in BrandoScript)
 (num, str) person = (41, "Brandon") # access = person[0]
-User[] = [
+User[] user = [
   User { id: 1, name: "Brandon" }
 ]
-mut unknown[] = []
+mut unknown[] values = []
 
 (num or str)[] values = ["Brandon", 41, "old"]
 
@@ -25,11 +25,47 @@ str greet(str name) {
   "Hello, \(name)!"
 }
 
+(num)(num, num) add = (num a, num b) {
+  a + b
+}
+
 `mut` keyword means the variable is mutable; immutable by default
 mut num age = 41
 age = 42
 
 `unknown` keyword means the type is unknown and will require type guards
+
+###
+Types
+###
+
+type generic Result(O, E) = ok(O) or err(E)
+
+type AddFn = (num)(num, num)
+AddFn add = (num a, num b) {
+  a + b
+}
+
+###
+Maps
+###
+
+# map(<KeyType>, <ValueType>)
+map(str, unknown) user = {
+  name: "Brandon",
+  age: 41,
+  isAdmin: true
+}
+maybe str name = user at "name"
+if (name is str) {
+  print("Hello, \(name)!")
+}
+
+# To add or update, the entire map must be mut (no support for fine-grained mut control)
+mut map(str, str) simple = {
+  key1: "value1"
+}
+simple at "key2" = "value2"
 
 ###
 Structs
@@ -65,37 +101,35 @@ struct Error {
   str message
 }
 
-generic struct Result(O, E) {
-  O ok
-  E err
-}
+generic type Result(O, E) = ok(O) or err(E)
+type MathResult = Result(num, Error)
 
-Result(num, Error) divide(num a, num b) {
+MathResult divide(num a, num b) {
   if b equals 0 {
-    return err Error { code: 1, message: "Cannot divide by 0" }
+    return err(Error { code: 1, message: "Cannot divide by 0" })
   }
 
-  ok (a / b)
+  ok(a / b)
 }
 
-Result(num, Error) divideAndProcess(num a, num b) {
+MathResult divideAndProcess(num a, num b) {
   attempt {
     num result = divide(a, b)
-    ok result
+    ok(result)
   }
 
-  handle(err) {
-    err err
+  handle(e) {
+    err(e)
   }
 }
 
-Result(num, Error) res = divideAndProcess(10, 0)
+MathResult res = divideAndProcess(10, 0)
 
 match res {
   ok(val) {
     print("Result: \(val)")
   }
-  err(error) {
+  err(e) {
     print("Error: \(error)")
   }
 }
@@ -110,7 +144,7 @@ struct User {
 # Extending structs
 struct AdminUser extends User {
   bool isAdmin = true # can override a default value
-  str[] roles = ["admin] # add new properties/methods not on parent
+  str[] roles = ["admin"] # add new properties/methods not on parent
 }
 
 # Struct shape (built-in, hidden, readonly property)
@@ -167,7 +201,8 @@ if user.id is num {
   print("User ID is a number")
 }
 
-if user is User.shape {
+# Type checking
+if user is User {
   print("user is an instance of User!")
 }
 
@@ -198,7 +233,7 @@ str name = if user.id equals 1 { "Brandon" } else { "Brando" }
 
 match user.id {
   1 { print("Hello") }
-  _ { print("Goodbye") }
+  _ { print("Goodbye") } # _ is the default arm
 }
 
 ###
@@ -243,12 +278,15 @@ match result {
 Functions
 ###
 
+# Typing
+(ReturnType)(ArgType...) # (num)(str, num)
+
 str greet(str name) {
   "Hello, \(name)!"
 }
 
 # makeCounter returns a function that returns a number and accepts no args
-num:() makeCounter(num start) {
+((num)())(num) makeCounter(num start) {
   mut num count = start
 
   num next() {
@@ -266,7 +304,7 @@ str greet(str name = "World") {
 # Generic functions
 import { push } from std.arr
 
-generic O[] transform(I, O)(I[] arr, O:(I) transformer) {
+generic O[] transform(I, O)(I[] arr, (O)(I) transformer) {
   mut O[] result = []
 
   for I item in array {
@@ -285,9 +323,10 @@ generic bool includes(T)(T[] arr, T element) {
 
   false
 }
+num[] numbers = [1, 2, 3]
+bool found = includes(num)(numbers, 3)
 
 # Unions as args/return types
-import { typeOf } from std.type
 (str or num) doTheThing((str or num) val) {
   if val is num {
     return num * 2
@@ -295,6 +334,19 @@ import { typeOf } from std.type
 
   return "Hello, \(val)!"
 }
+
+###
+String interpolation
+###
+
+num age = 41
+str name = "Brandon"
+print("Hello, \(name)!")
+
+str message = """
+  Hello, \(name)!
+  You are \(age) years old!
+"""
 
 ###
 Loops
