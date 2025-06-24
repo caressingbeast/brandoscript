@@ -1,0 +1,16 @@
+{
+  "name": "brandoscript",
+  "version": "0.0.1",
+  "description": "A minimal, strongly-typed scripting language with clear syntax, immutable-by-default variables, and first-class support for structs, pattern matching, and result-based error handling.",
+  "license": "MIT",
+  "author": "Brandon Burning <brando@brando.wtf> (http://brandonburning.com)",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "typescript": "^5.8.3"
+  }
+}

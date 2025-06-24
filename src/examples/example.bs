@@ -1,0 +1,3 @@
+str name = "Brandon"
+mut num age = 41
+bool isCool = true
