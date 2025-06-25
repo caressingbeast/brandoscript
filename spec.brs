@@ -59,21 +59,21 @@ Maybe(UserId) id = user at "id" # user is a map (`at` syntax is only available o
 Maps
 ###
 
-# Map(ValueType) # under the hood, BS infers Map(KeyType = "string", ValueType)
-Map(unknown) user = {
+# map(ValueType) # under the hood, BS infers map(KeyType = "string", ValueType)
+map(unknown) user = {
   age: 41,
   isAdmin: true,
   name: "Brandon"
 }
 
-Maybe(str) name = user at "name"
+Maybe(str) name = user at "name" # may not exist
 
 if name is str {
   print("Hello, \(name)!")
 }
 
 # To add or update, the entire map must be `mut` (no support for fine-grained `mut` control yet)
-mut Map(str) simple = {
+mut map(str) simple = {
   key1: "value1"
 }
 simple at "key2" = "value2"
@@ -83,11 +83,36 @@ if "name" in user {
 }
 
 type MapValues = bool or num or str
-Map(MapValues) mixedMap = {
+map(MapValues) mixedMap = {
   id: 1,
   isCool: true, # always
   name: "Brandon"
 }
+
+# You can also create a partially open map
+map {
+  id: num,
+  name: str,
+  ...: unknown
+} user {
+  id: 1,
+  name: "Brandon"
+}
+
+type UserMap = map {
+  id: num,
+  name: str,
+  ...: bool or num or str
+}
+UserMap user = {
+  id: 1,
+  name: "Brandon"
+  status: "active"
+}
+
+# This allows for safe retrieval (without unknown)
+str name = user at "name"
+{ id, name } = user
 
 ###
 Structs
@@ -184,7 +209,7 @@ num[] numbers = [1, 2, 3, 4, 5]
 User user = User { id: 1, name: "Brandon" }
 { num id, rest unknown as remaining } = user
 
-Map(unknown) mapUser = { id: 1, age: 41, name: "Brandon" }
+map(unknown) mapUser = { id: 1, age: 41, name: "Brandon" }
 { Maybe(num) id, num age = 18 } = mapUser # default values negate the need for maybe and checking
 print("age = \(age)")
 if id is num {
@@ -413,7 +438,7 @@ for num score in scores {
 }
 
 # maps
-Map(unknown) user = { id: 1, name: "Brandon" }
+map(unknown) user = { id: 1, name: "Brandon" }
 for str key in user {
   print(user at key)
 }
@@ -451,33 +476,44 @@ struct User {
   str name
 }
 
-generic type Maybe(Y) = yes(Y) or no
-generic type Result(O, E) = ok(O) or err(E) # built in but included here for reference
+# Reference structs/types only... all are part of core BS
+struct Response {
+  bool ok
+  map(str) headers
+  num status
+  str statusText
+  str url
+  async unknown json()
+  async str text()
+}
+generic type Result(O, E) = ok(O) or err(E)
+####
+
+struct ApiUser {
+  num id
+  str name
+}
+type FetchResponse = Result(Response, Error)
 type GetUserResult = Result(User, Error)
 
 async fn((str): GetUserResult) getUser = (str userId) {
   attempt {
-    await unknown res = fetch("http://example.com/users/\(userId)")
-    mut Maybe(unknown) raw = no
-
-    if "json" in res {
-      raw = yes(await res.json())
-    }
+    FetchResponse result = await fetch("http://example.com/users/\(userId)")
     
-    if raw is yes(Map(unknown) data) and
-       "id" in raw and raw at "id" is num and 
-       "name" in raw and raw at "name" is str {
-      User user = User {
-        id: raw.id,
-        name: raw.name
-      }
-
-      return ok(user)
-    } else {
-      return err(Error { message: "error", status: 0 })
+    if not res is ok(Response response) {
+      return err(Error { message: "Network error", status: 0 })
     }
+
+    ApiUser data = await res.json()
+
+    User user = User {
+      id: data.id,
+      name: data.name
+    }
+
+    return ok(user)
   } handle(unknown err) {
-    return err(Error { message: "error", status: 0 })
+    return err(Error { message: "Network error", status: 0 })
   }
 }
 
