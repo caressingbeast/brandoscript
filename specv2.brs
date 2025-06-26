@@ -177,6 +177,24 @@ let F<(String), Void> log = fun(String message) {
   print(message)
 }
 
+# Functions can return other functions and capture outer-scope values (closures)
+type InnerFn = F<(), Number>
+type CounterFn = F<(Number), InnerFn>
+let CounterFn counter = fun(Number start) {
+  mut Number count = start
+
+  let InnerFn next = fun() {
+    count = count + 1
+    return count
+  }
+
+  next
+}
+
+let InnerFn inner = counter(3)
+inner() # count = 4
+inner() # count = 5
+
 ###
 Control Flow
 ###
@@ -278,41 +296,37 @@ let Map<Unknown> userMap = match (await getUser(userId)): # getUser is an async 
 
 ### 
 Destructuring
+Structs cannot be destructured (to extract fields, use dot notation (`user.id`) or convert to a Map)
+The default behavior is to copy references, not alter the original
 ###
 
+# Lists
 let List<Number> coords = [1, 2]
 [Number x, Number y] = coords
 # x = 1, y = 2
 
-let User1 destructureUser = User1 {
-  id: 1, 
-  name: "Brandon"
-}
-let { Number id, String name } = destructureUser
-# id = destructureUser.id, name = destructureUser.name
-
+# Tuples
 let (Number, Number) coords = (1, 2)
 let (Number x, Number y) = coords
 # x = 1, y = 2
 
-{ Number id as userId, String name as userName } = destructureUser
-# userId = destructureUser.id, userName = destructureUser.name
-
-# Rest operators
-let List<Number> numbers =  [1, 2, 3, 4, 5]
-let [Number x, ...List<Number> as remaining] = numbers
-# x = 1, remaining = [2, 3, 4, 5]
-
-let User1 restUser = User1 { id: 1, name: "Brandon" }
-let { Number id, rest omit(restUser, ["id"]) as remaining } = restUser
-# struct instances require omit to keep type safety
-
-let Map<Unknown> mapUser = { id: 1, age: 41, name: "Brandon" }
-
-let { Maybe<Number> id, Number age = 18 } = mapUser # default values negate the need for maybe and checking
+# Maps
+let { Maybe<Number> id, Number age = 18 } = mapUser # Default values provide fallback behavior, so `Maybe<T>` and runtime checks are optional
 print("age = \(age)")
 if id is Number {
   print("id = \(id)")
 }
+
+let { Number id as userId = 1, Number age as userAge = 18 } = mapUser
+# userId = mapUser.id, userAge = mapUser.age
+
+# Rest operators
+let List<Number> numbers =  [1, 2, 3, 4, 5]
+let [Number ...List<Number> rest] = numbers
+# x = 1, remaining = [2, 3, 4, 5]
+
+let { Number id = 1, ...Map<Unknown> rest} = mapUser
+
+
 
 
