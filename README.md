@@ -1,36 +1,36 @@
 # BrandoScript
 
-BrandoScript is a modern, statically-typed programming language that is designed to compile directly to JavaScript. The language prioritizes readability, simplicity, and safety in both type handling and error management. BrandoScript is still in its specification phase, with no current compiler or runtime available. This repository outlines the language's syntax, features, and functionality.
+BrandoScript is a fun, statically-typed programming language that compiles to JavaScript. It's all about keeping things simple, readable, and safe when working with types and errors. Right now, BrandoScript is just a spec — no compiler or runtime yet, but the idea is to eventually bring it to life.
 
-Currently, BrandoScript is a specification and is not yet available for installation or compilation. Future updates will provide implementation details and tooling for compiling and running BrandoScript code.
+This repo outlines the language's syntax and features as they stand.
 
-## Key Features (Spec)
+## Cool Features (Spec)
 
-- **Immutability by default**: Variables are immutable unless explicitly marked as mutable with the `mutable` keyword.
-- **First-class functions**: Functions are first-class citizens, enabling clean, flexible code structures.
-- **Advanced types**: Supports primitives, structs, optional types, unions, and more.
-- **Pattern matching**: Easily match and destructure complex data structures (including lists, maps, and structs).
-- **Safe access with `with`**: Access nested fields and handle optional values safely, with automatic fallback to defaults.
-- **Result-based error handling**: No exceptions—use the `Result` type to handle errors and success states in a structured way.
-- **Async/Await**: Asynchronous programming built-in, leveraging `Result` types for robust error handling.
+- **Immutability by default**: Variables are immutable unless you explicitly mark them as `mutable`.
+- **First-class functions**: Functions are just like any other value, so you can pass them around.
+- **Fancy types**: Includes primitive types, structs, unions, optionals, and more.
+- **Pattern matching**: Match and destructure complex data structures (like lists, maps, and structs) with ease.
+- **Safe access with `with`**: Use `with` to safely access nested values with fallbacks, no more `null` errors.
+- **Error handling with Results**: No exceptions — just use the `Result` type for structured error handling.
+- **Async/Await**: Built-in async/await support with structured error handling using `Result`.
 
 ## Language Features
 
 ### Variables
 
-- Immutable by default (`define`), mutable with `mutable` keyword.
-- Variables cannot be reassigned; use `set` for assignments.
-  
+- Immutable by default (`define`), mutable with the `mutable` keyword.
+- Variables can’t be reassigned, but you can use `set` for that.
+
 ```brandoscript
 define name: String = "Brandon"  
 define mutable status: String = "active"  
-set status = "inactive" # Valid, status is mutable
+set status = "inactive" # This works because `status` is mutable
 ```
 
 ### Functions
 
-- Functions are first-class, and their types are declared on creation.
-- Supports default parameters and custom return types.
+- Functions are first-class, and you define their types upfront.
+- You can even set default parameters.
 
 ```brandoscript
 define greet = takes (a: Number, n: String) returns String {  
@@ -40,8 +40,8 @@ define greet = takes (a: Number, n: String) returns String {
 
 ### Types and Structs
 
-- Built-in support for structs, optional types, unions, and advanced composition.
-  
+- You can define structs, optional types, unions, and even compose new types from others.
+
 ```brandoscript
 define User = {  
   id: Number,  
@@ -56,7 +56,7 @@ define user: User = {
 
 ### Pattern Matching
 
-- Powerful `which` expression for pattern matching on lists, structs, and more.
+- Use `which` to match against lists, structs, or any kind of data.
 
 ```brandoscript
 which user {  
@@ -71,7 +71,7 @@ which user {
 
 ### Async/Await
 
-- Built-in async/await support with `Result` types for structured error handling.
+- Full async/await support, with `Result` types for handling errors.
 
 ```brandoscript
 define main = takes () async returns Nothing {  
@@ -87,14 +87,14 @@ define main = takes () async returns Nothing {
 }
 ```
 
-## Development and Next Steps
+## Next Steps
 
-BrandoScript is currently in the specification phase. There is no installation or compilation process yet. The next step will be to develop a compiler, runtime, and associated tooling to make BrandoScript executable.
+Right now, BrandoScript is just a spec. There's no way to run it yet, but in the future, the goal is to get a compiler and runtime going.
 
 ## Contributing
 
-If you want to contribute to BrandoScript, feel free to fork the repository, review the language spec, and submit your suggestions or improvements.
+Got ideas? Feel free to fork this repo, review the language spec, and send in suggestions or pull requests!
 
 ## License
 
-This project does not have a license at the moment. Please check back for updates in the future.
+No license yet! Check back later for updates.
