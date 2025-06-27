@@ -19,28 +19,28 @@ set status = "inactive" # all good!
 
 # Functions (all functions are first-class functions; no function declarations)
 # Because the type is declared when the function is created, no need to specify the type after the name
-define greet = takes(a: Number, n: String) returns String {
+define greet = takes (a: Number, n: String) returns String {
   "Hello, #{n}! You are #{a} years old." # implicit return
 }
 
 greet(41, "Brandon") # "Hello, Brandon! You are 41 years old."
 
 # just does stuff, no return value
-define log = takes(message: String) returns Nothing {
+define log = takes (message: String) returns Nothing {
   print(message)
 }
 
-define oops = takes() returns Nothing {
+define oops = takes () returns Nothing {
   return 42 # invalid, cannot return a value from a `Nothing` function
 }
 
 # Default parameters
-define log = takes(message: String) returns Nothing {
+define log = takes (message: String) returns Nothing {
   print(message)
 }
 
 # Custom returns
-define getCoords = takes() returns (Number, Number) {
+define getCoords = takes () returns (Number, Number) {
   (10, 20)
 }
 
@@ -452,7 +452,7 @@ define Result of (T, E) =
   Ok { data: T }
   or Error { error: E }
 
-define divide = takes(a: Number, b: Number) returns Result of (Number, String) {
+define divide = takes (a: Number, b: Number) returns Result of (Number, String) {
   if b equals 0 {
     return Error { error: "Cannot divide by zero" }
   }
@@ -656,7 +656,7 @@ export define User = {
   name: String
 }
 
-export define getUser = takes(id: Number) returns User {
+export define getUser = takes (id: Number) returns User {
   { id: id, name: "Brando" }
 }
 
@@ -710,7 +710,7 @@ define Post = Base with Timestamped with {
 ### 
 Async/Await
 ###
-define main = takes() async returns Nothing {
+define main = takes () async returns Nothing {
   define response = await fetchData("https://example.com") # async function returning a `Result`
 
   which response {
@@ -724,7 +724,7 @@ define main = takes() async returns Nothing {
 }
 
 # returns a `Result` with a String `Ok` or a String `Error`
-define fetchData = takes(url: String) async returns Result of (Response, String) {
+define fetchData = takes (url: String) async returns Result of (Response, String) {
   # body
 }
 
