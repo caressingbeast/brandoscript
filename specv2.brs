@@ -1,332 +1,740 @@
 ###
-Types
-- Bool: true or false
-- List
-- Map
-- Number
-- String
-- Unknown (type of value is unknown)
-- Void
-- instances of structs
+Variables and Variable Declarations
+All variables are immutable by default
+To make a variable mutable, add the `mutable` keyword after `define`
+`define` is first when declaring any new varable, `mutable` is an optional keyword but must come immediately after `define`
 ###
 
-###
-Variables
-###
+# Primitive types
+define age: Number = 41
+define isTrue: Bool = true
+define name: String = "Brandon"
 
-# `let` means immutable
-let String name = "Brandon"
-let Number age = 41
-age = 42 # doesn't work!
+define mutable status: String = "active"
 
-# `mut` means mutable
-mut String nickname = "Brando"
-nickname = "Brando" # works!
+set name = "Brando" # invalid, not mutable
+set status = "inactive" # all good!
+
+# All variable value re-assignment requires the `set` keyword
+
+# Functions (all functions are first-class functions; no function declarations)
+# Because the type is declared when the function is created, no need to specify the type after the name
+define greet = takes(a: Number, n: String) returns String {
+  "Hello, #{n}! You are #{a} years old." # implicit return
+}
+
+greet(41, "Brandon") # "Hello, Brandon! You are 41 years old."
+
+# just does stuff, no return value
+define log = takes(message: String) returns Nothing {
+  print(message)
+}
+
+define oops = takes() returns Nothing {
+  return 42 # invalid, cannot return a value from a `Nothing` function
+}
+
+# Default parameters
+define log = takes(message: String) returns Nothing {
+  print(message)
+}
+
+# Custom returns
+define getCoords = takes() returns (Number, Number) {
+  (10, 20)
+}
 
 # Lists
-# To acess a particular entry: list[0]
-# To assign: list[0] = THING
-let List<String> list = []
-let List<(Number or String)> list = []
+define numbers: [Number] = [1, 2, 3]
+define users: [User] = [{}, {}, {}] # update with examples
+define whatever: [?] = [1, "Brandon", true]
+define union: [Number or String] = [1, "Brandon"]
 
 # Maps
-# To access a particular entry: map["key"]
-# To assign: map["key"] = THING
-let Map<String> map = {
+# Maps use String keys by default, so the key type is omitted but still allowed
+define map: {String} = {
   name: "Brandon"
 }
 
-let Map<(Number or String)> map = {
-  id: 1,
+# Values could be anything
+define map: {?} = {
   name: "Brandon"
 }
 
-let Map<Unknown> map = {
-  unknown: "anything"
+# Values could be multiple types
+define map: {Bool or Number or String} = {
+  name: "Brandon"
 }
 
 # Tuples
-# To access a particular entry: t[0]
-# To assign: t[0] = THING
-let (Number, String) t = (41, "Brandon")
+define coords: (Number, Number) = (10, 20)
 
-# Structs
-# To access a particular entry: user.name
-# To assign: user.name = THING
-struct User1 {
-  Number id
-  Bool active
-  String name
+# Types
+define User = {
+  age: Number,
+  name: String
 }
 
-let User1 user = User1 {
-  id: 1,
-  active: true,
+# Using the type
+define user: User = {
+  age: 41,
   name: "Brandon"
 }
 
-###
-Structs
-To re-assign any value, the entire struct instance must be `mut`
-###
-struct User2 {
-  Number id
-  String name
+# Alternatively
+define user: { age: Number, name: String } = {
+  age: 41,
+  name: "Brandon"
 }
 
-# Optional values using Maybe<T>
-struct User2 {
-  Number id
-  String name
-  Maybe<String> status # Maybe is a built-in enum type (Yes/No; defaults to No)
-}
-
-# Default values
-struct User3 {
-  Number id
-  String name = "Anonymous"
-  Maybe<String> status = Yes("active") # can default a maybe (defaults to No if not provided)
-}
-
-# Methods
-struct User4 {
-  Number id
-  String name
-
-  String greet() {
-    "Hello, @{self.name}!"
-  }
-
-  Void rename(String n) { // struct instance needs to be `mut`
-    self.name = n
+# Optional types
+define User = {
+  id: Number,
+  name: String,
+  profile: optional { # `profile` is optional
+    username: String, # `username` is required and must be a string if `profile` exists
+    website: optional String # `website` is optional
   }
 }
-
-# Extension
-struct User5 {
-  Number id
-  Bool isAdmin = false # default value
-  String name
+define user: User = {
+  id: 1,
+  name: "Brandon"
 }
 
-struct AdminUser extends User5 {
-  Bool isAdmin = true # override defaults from parent
-  List<String> roles = ["admin"]
+# Accessing an optional property
+# `with` is used for safe optional chaining with fallback for assignment expressions
+# Don't use `with` in conditionals
+define username: String = user with profile with username or user.name # if no, default to "Brandon"
+define username: String = user with profile with username or "No Username" # if no, default to "No Username"
+define username: optional String = user with profile with username # safe because `username` is optional
+
+***
+Lists
+***
+
+define list: [Number] = [1, 2, 3]
+
+# Accessing data
+# Zero-based indexing
+list[0] # = 1
+
+###
+If/Else
+###
+
+define x: Number = 12
+if x < 10 {
+  print(x)
+} else {
+  print("x > 10")
+}
+
+define isAdmin: Bool = true
+if isAdmin {
+  # do something
+}
+
+if x equals 12 {
+  # do something
+}
+
+if username equals "Brando" {
+  # do something
+}
+
+# Type checks
+# Type checking is structural
+# Type checks check for presence and type
+if x is Number {
+  # do something
+}
+
+define User = {
+  id: Number,
+  name: String
+}
+define user: User = {
+  id: 1,
+  name: "Brandon"
+}
+
+if user is User {
+  # do something
+}
+
+define mapUser: {?} = {
+  name: "Brandon"
+}
+
+if mapUser["name"] is String as name {
+  print("name = ${name}")
+}
+
+# Presence/checking
+# Since some things can return `absent`
+define user: {String} = {
+  name: "Brandon"
+}
+
+if user["name"] is present {
+  # do something
+}
+
+if user["name"] is absent {
+  # do something
+}
+
+# Negation
+# Use `not` as a prefix keyword
+if not user is User {
+  # do something
+}
+
+if not isAdmin {
+  # do something
+}
+
+if not x equals 12 {
+  # do something
+}
+
+# Casting value to a variable
+# Casting only allowed on items with a previously declared type
+if user.name is present as username {
+  print(username) # username = user.name; user.name already explicitly typed
+}
+
+# Chained checks
+# `and`/`or`
+if user.profile is present as p and p.role is String and p.role equals "admin" {
+  # do something
+}
+
+# Alternatively
+if (user.profile is present as p and p.role is String and p.role equals "admin") {
+  # do something
+}
+
+if x < 5 or x > 10 {
+  # do something
+}
+
+# Assignment from `if`
+define username: String = if user.profile is present as p and p.username is present {
+  p.username
+} else "Anonymous"
+
+###
+Structural types (structs)
+Instances must be `mutable` to change any value
+###
+define User = {
+  id: Number,
+  name: String
+}
+
+define user: User = {
+  id: 1,
+  name: "Brandon"
+}
+set user.name = "Brando" # invalid, not mutable
+
+define mutable user: User = {
+  id: 1,
+  name: "Brando"
+}
+set user.name = "Brando" # valid
+
+# Partially defined structs
+define User = {
+  id: Number,
+  name: String,
+  ...: ? # unknown
+  # ...: String
+  # ...: Bool or String
+  # ...: [Number]
+  # ...: {String}
+}
+
+print(user.name) # safe, statically defined
+print(user.whatever) # unsafe
+
+# Optional fields
+define User = {
+  id: Number,
+  name: String,
+  status: optional ("active" or "inactive"), # `status` is optional, but if present can only be in the union
+  profile: optional { # `profile` is optional
+    username: String, # `username` is required if `profile`
+    url: optional String # `url` is optional
+  }
 }
 
 ###
 Maps
+By default, keys are strings so it can be left off in declaration ({String, String})
 ###
 
-# Typing
-# Map<ValueType>
-# BS implicity assumes the key type is String, but you can be explicit (and if BS ever supports other types)
-# Map<String, ValueType>
-
-# Shorthand
-let Map map = {} # = Map<Unknown> = Map<String, Unknown>
-
-# You can create partially open maps with a custom `type`
-type PartialUser = Map {
-  id: Number,
-  name: String,
-  ...: Unknown
+# A map where all values are strings
+define user: {String} = {
+  id: "1"
 }
 
-mut PartialUser user = {
-  id: 1,
-  name: "Brandon"
-  age: 41
+# A map of unknown values
+define user: {?} = {
+  whatever: "whatever"
 }
-user["id"] = "1" # not allowed, incorrect type
-user["name"] = "Brando" # allowed, correct type
-user["key"] = "value" # allowed, new key/value pair
-let Number id = user["id"] # safe
-let String whatever = user["whatever"] # unsafe, should use Maybe<T>
-let Maybe<String> whatever = user["whatever"] # safe after `match` of type check
 
-# Alternatively
-mut String whatever = ""
-match user["whatever"]:
-  Yes(val): { if val is String { whatever = val } }
-  No: { print("error") }
+# This applies to any type, whether defined (e.g. User, [Number], {?}), or a single type or multiple (e.g. {Bool or String})
+
+# Fetching data
+# Because maps are dynamic, all fetched values need a presence check (`is` or `has`, or `with`)
+define name: optional String = user["name"]
+if name is String {
+  # do something
+}
+
+if user has "name" {
+  # do something
+}
+
+define name: String = user with ["name"] or "Brandon" # safely traverse and assign a fallback
+# with is only for assignment, not for logic checks
+
+define name: String = user["name"] # invalid, must be `optional String` or use `with` and a fallback
 
 ###
-Functions and Methods
-If the last line of a function is a bare expression, it is implicitly returned. Otherwise, use `return`.
+Loops
 ###
 
-# Typing
-# F<(ArgTypes), ReturnType>
-
-let F<(Number), Number> sum = fun(Number n) {
-  n + 10
+define x: Number = 0
+while x < 5 {
+  print(x)
+  set x = x + 1
 }
 
-# You can also save the type signature and reference it
-type SquareFn = F<(Number), Number>
-let SquareFn square = fun(Number n) {
-  n * n
+# Lists
+define numbers: [Number] = [1, 2, 3]
+each n in numbers {
+  print(n)
 }
 
-let F<(), String> greet = fun() {
-  "Hello, World!"
+each (i, n) in numbers {
+  print("#{i}: #{n}")
 }
+# i is implicitly a Number, type of n is known from when `numbers` was defined
 
-let F<(String), Void> log = fun(String message) {
-  print(message)
-}
-
-# Functions can return other functions and capture outer-scope values (closures)
-type InnerFn = F<(), Number>
-type CounterFn = F<(Number), InnerFn>
-let CounterFn counter = fun(Number start) {
-  mut Number count = start
-
-  let InnerFn next = fun() {
-    count = count + 1
-    return count
+define whatever [?] = [1, "2", true]
+each w in whatever {
+  if w is Number as n {
+    print("number: #{n}")
+  } else if w is String as s {
+    print("string: #{s}")
+  } else {
+    print("other: #{w}")
   }
-
-  next
 }
 
-let InnerFn inner = counter(3)
-inner() # count = 4
-inner() # count = 5
-
-###
-Control Flow
-###
-
-# While
-mut Number counter = 0
-while counter < 10 {
-  print(counter)
-  counter = counter + 1
+# Maps
+define user: {String} = {
+  id: "1",
+  name: "Brandon"
 }
 
-# Loops
-# Assume `user` is a map with a name property
-for (_, Unknown val) in user { # use `_` to discard
-  let String name = match val:
-    Yes(String n): { n }
-    No: { "" }
-
-  print("Hello, #{name}!")
+each (key, value) in user {
+  print("#{key} = #{value}")
 }
 
-for key in user {
-  let Maybe<String> name = user[key]
+# Structs
+each (field, value) in user {
+  print("#{field}: #{value}")
 }
 
-# Inclusive range loop
-for Number i in 0 to 10 {
+# Skip/exit
+each n in numbers {
+  if n equals 3 {
+    exit each  # stop loop early
+  }
+  if n mod 2 equals 0 {
+    skip  # skip even numbers before 3
+  }
+  print(n)  # prints: 1, then stops at 3
+}
+
+# Ranges
+
+# Inclusive
+each i in 0 to 5 {
   print(i)
 }
 
-# Exclusive range loop
-for Number i in 0 until 10 {
-  print(i) # stops at 9
+# Exclusive
+each i in 0 until 5 {
+  print(i)
 }
 
-let List<Number> nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-for Number num in nums {
-  if num mod 2 equals 0 { skip }
-  if num  > 8 { exit }
-  print(num) # 1, 3, 5, 7
+###
+Destructuring
+###
+
+# Tuples
+define coords: (Number, Number) = (10, 20)
+define (x, y): (Number, Number) = coords
+print(x)  # 10
+print(y)  # 20
+
+# Maps
+define settings: {?} = {
+  fontSize: 14,
+  theme: "light"
 }
 
-# If/Else
-# Supports `equals`, <, <=, >, >=, `not`, `is`
-let Number counter = 0
-if counter < 10 {
-  print(counter)
+define { fontSize or 12 as size: Number, theme or "dark": String } = settings
+
+print(theme) # "dark"... would equal "dark" if `theme` didn't exist or wasn't a string
+print(size) # 14... would equal 12 if `fontSize` didn't exist or wasn't a number
+
+# Structs
+# Structs require a type annotation that the instance inherited from
+define User = {
+  id: Number,
+  name: String,
+  status: optional ("active" or "inactive")
 }
 
-let Bool isActive = true
-if isActive {
-  print("Active")
-}
-
-struct User6 {
-  String name
-}
-let User6 user = User6 {
+define user: User = {
+  id: 42,
   name: "Brandon"
 }
 
-if user.name equals "Brandon" {
-  print("Yes")
+define { id as userId, name, status or "inactive" }: User = user
+
+print(userId) # 42
+print(status) # "inactive" (default used since missing)
+
+define User = {
+  id: Number,
+  name: String,
+  email: optional String,
+  status: optional String
 }
 
-# This could be an else, but I wanted to explicity show `not`
-if not user.name equals "Brandon" {
-  print("No")
+define mutable user: User = {
+  id: 1,
+  name: "Alice"
+  # status and email are missing here, which is valid
 }
 
-if user.name is String {
-  print("#{user.name} is a String")
+define { id, &remaining }: User = user # `remaining` is a variable name, could be `rest` or whatever
+
+print(id)         # 1
+print(remaining)  # { name: "Alice", status: absent, email: absent }
+
+# Accessing optional fields safely
+if remaining.status is present {
+  print(remaining.status)
 }
 
-if not user.name is String {
-  print("#{user.name} is not a String")
-}
-
-# If/else as assignment
-let Number userId = 1
-let String name = if userId equals 1 { "Brandon" } else { "Unknown" }
-
-# Match
-let String name = match userMap["name"]: // `userMap` is a map
-  Yes(String n): { n }
-  No: { "" }
-
-let Number status = 200
-match status: 
-  (200 or 201): { print("OK") }
-  500: { print("Error") }
-  _: { print("Unknown") }
-
-# Match as assignment
-let Number userId = 1
-let Map<Unknown> userMap = match (await getUser(userId)): # getUser is an async API call
-  Yes(Map<Unknown> data): { data }
-  No: { {} }
-
-### 
-Destructuring
-Structs cannot be destructured (to extract fields, use dot notation (`user.id`) or convert to a Map)
-The default behavior is to copy references, not alter the original
-###
+print(remaining.email or "hello@example.com")
 
 # Lists
-let List<Number> coords = [1, 2]
-[Number x, Number y] = coords
-# x = 1, y = 2
+# List require a type annotation
+define [x, y, &remaining]: [Number] = [10]
+# x = 10
+# y = `absent`
+# `remaining` = []
 
-# Tuples
-let (Number, Number) coords = (1, 2)
-let (Number x, Number y) = coords
-# x = 1, y = 2
+###
+Error Handling
+BrandoScript does not support `throw`. Errors must be handled via the built-in `Result` type
+###
+define Result of (T, E) =
+  Ok { data: T }
+  or Error { error: E }
 
-# Maps
-let { Maybe<Number> id, Number age = 18 } = mapUser # Default values provide fallback behavior, so `Maybe<T>` and runtime checks are optional
-print("age = \(age)")
-if id is Number {
-  print("id = \(id)")
+define divide = takes(a: Number, b: Number) returns Result of (Number, String) {
+  if b equals 0 {
+    return Error { error: "Cannot divide by zero" }
+  }
+  return Ok { data: a / b }
 }
 
-let { Number id as userId = 1, Number age as userAge = 18 } = mapUser
-# userId = mapUser.id, userAge = mapUser.age
+###
+Which
+The `which` expression lets you examine a value and execute code based on which pattern it matches. It’s ideal for working with tagged unions, structs, literals, and more, providing clear, concise, and expressive control flow.
+which <expression> {
+  <pattern_1> {
+    <block_1>
+  }
+  <pattern_2> {
+    <block_2>
+  }
+  ...
+  _ {
+    <fallback_block>
+  }
+}
+###
 
-# Rest operators
-let List<Number> numbers =  [1, 2, 3, 4, 5]
-let [Number ...List<Number> rest] = numbers
-# x = 1, remaining = [2, 3, 4, 5]
+# `Result` matching
+which result {
+  Ok { data } {
+    print("data: #{data}")
+  }
+  Error { error } {
+    print("error: #{error}")
+  }
+  _ {
+    print("Unknown")
+  }
+}
 
-let { Number id = 1, ...Map<Unknown> rest} = mapUser
+# Structs
+define User = {
+  id: Number,
+  name: String,
+  status: optional String
+}
+
+define user: User = {
+  id: 1,
+  name: "Alice"
+}
+
+which user {
+  { id, name, status } {
+    print("#{name}, #{id}, #{status or 'unknown'}") # would print `absent` for status without fallback
+  }
+  _ {
+    print("Not a User")
+  }
+}
+
+# Literals
+define x: Number = 0
+which x {
+  0 {
+    print("0")
+  }
+  1 {
+    print("1")
+  }
+  _ {
+    print(x)
+  }
+}
+
+# Assignment
+define result = divide(10, 0) # `divide` returns a `Result`
+
+define message: String = which result {
+  Ok { data } {
+    "Success: #{data}"
+  }
+  Error { error } {
+    "Error: #{error}"
+  }
+  _ {
+    "Unknown result"
+  }
+}
+
+print(message) # Should be "Error: Cannot divide by zero"
+
+# Maps
+# Because maps are dynamic, types must be specified
+# `which` checks for presence and type match
+# You can't access &rest in `which`
+define user: {?} = {
+  age: 41,
+  name: "Brandon",
+  status: "active"
+}
+
+which user {
+  { age: Number, name: String } {
+    print("Hello, #{name}!")
+  }
+}
+
+which user {
+  { age: String, name: String } {
+    # arm is skipped because age is a Number
+  }
+}
+
+# Lists
+
+# Matches a list of just 2 numbers
+which numbers {
+  [x: Number, y: Number] {
+    # do something
+  }
+  _ {
+    # do something else
+  }
+}
+
+# Match first element, capture rest
+which numbers {
+  [head: Number, &tail: [Number]] { # only matches if `head` is a Number and the rest of the list is all numbers
+    # do something
+  }
+}
+
+# Match with an array of at least 2 elements, ignore the rest
+which numbers {
+  [a: Number, b: Number, ...] {
+    # do something
+  }
+}
+
+# Wildcard to ignore specific elements
+which numbers {
+  [_, _, third: Number, _] { # matches on a list of 4 elements, of which the element[2] is a Number
+    print(third)
+  }
+}
+
+# Advanced match
+which numbers {
+  [first: Number, ...] if first > 0 { # only matches if `first` is a Number and greater than 0
+    # do something
+  }
+}
 
 
+define mixed: [?] = [1, "two", true, 4]
 
+which mixed {
+  # First element is Number, second is String, rest any
+  [first: Number, second: String, &rest: [?]] {
+    # do something
+  }
+  
+  # First element is String or Bool
+  [head: (String or Bool), &tail: [?]] {
+    # do something
+  }
+  
+  # Fallback
+  _ {
+    # do something
+  }
+}
 
+# Guards with pattern matching
+which user {
+  { status as s: String } if s equals "active" { 
+    print("User is active!")
+  }
+
+  { status as s: String } if s equals "inactive" {
+    print("User is inactive!")
+  }
+
+  _ {
+    print(user.status)
+  }
+}
+
+# Tuples
+which point {
+  (x: Number, _, z: Number) {
+    # do something
+  }
+}
+
+###
+Importing/Exporting
+Applies to types, values, functions — anything defined.
+###
+
+# Exporting
+export define User = {
+  id: Number,
+  name: String
+}
+
+export define getUser = takes(id: Number) returns User {
+  { id: id, name: "Brando" }
+}
+
+# Importing
+import User, getUser from "./user"
+import all from "./user"
+import getUser as fetchUser from "./user"
+import length, print from std
+import print as log from std
+
+###
+Type Aliases and Composition
+###
+
+# Built-in `Result` type
+# BS supports generic types
+define Result of (O, E) = 
+  Ok { data: O } or
+  Error { error: E }
+
+define ID = Number
+
+# Base struct
+define Base = {
+  id: ID,
+  createdAt: String
+}
+
+# User composed with Base
+define User = Base with {
+  name: String
+}
+
+# Admin composed with User
+define Admin = User with {
+  permissions: [String]
+}
+
+define Timestamped = {
+  createdAt: String,
+  updatedAt: optional String
+}
+
+define Post = Base with Timestamped with {
+  body: String,
+  title: String
+}
+
+# If `with` leads to a conflict (same key with different types) it leads to a compilation error
+
+### 
+Async/Await
+###
+define main = takes() async returns Nothing {
+  define response = await fetchData("https://example.com") # async function returning a `Result`
+
+  which response {
+    Ok { data } {
+      print("Success: #{value}")
+    }
+    Error { error } {
+      print("Failed: #{reason}")
+    }
+  }
+}
+
+# returns a `Result` with a String `Ok` or a String `Error`
+define fetchData = takes(url: String) async returns Result of (Response, String) {
+  # body
+}
+
+# Built-in `Response` type
+define Response = {
+  ok: Bool,
+  status: Number,
+  headers: {?},
+  json: async returns Result of ({?}, String),
+  text: async returns Result of (String, String)
+}
+
+# Provide stdlib helpers to wrap a lot of API patterns
