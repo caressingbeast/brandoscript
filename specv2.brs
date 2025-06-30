@@ -19,28 +19,37 @@ set status = "inactive" # all good!
 
 # Functions (all functions are first-class functions; no function declarations)
 # Because the type is declared when the function is created, no need to specify the type after the name
-define greet = takes (a: Number, n: String) returns String {
+define greet = (a: Number, n: String): String {
   "Hello, #{n}! You are #{a} years old." # implicit return
 }
 
 greet(41, "Brandon") # "Hello, Brandon! You are 41 years old."
 
 # just does stuff, no return value
-define log = takes (message: String) returns Nothing {
+define log = (message: String): Nothing {
   print(message)
 }
 
-define oops = takes () returns Nothing {
+define oops = (): Nothing {
   return 42 # invalid, cannot return a value from a `Nothing` function
 }
 
 # Default parameters
-define log = takes (message: String) returns Nothing {
+define log = (message: String or "Hello"): Nothing {
   print(message)
 }
 
+# Default parameters with a union
+define log = (message: (Number or String) or "Hello"): Nothing {
+  print(message);
+}
+
+log("Yo!") # => "Yo!"
+log(42) # => 42
+log() # => "Hello"
+
 # Custom returns
-define getCoords = takes () returns (Number, Number) {
+define getCoords = (): (Number, Number) {
   (10, 20)
 }
 
@@ -113,10 +122,14 @@ Lists
 ***
 
 define list: [Number] = [1, 2, 3]
+define list: [?] = [1, "2", true, {}]
 
 # Accessing data
 # Zero-based indexing
 list[0] # = 1
+
+# Because a value at a particular index could be `absent`, best practice to provide fallbacks
+define first: Number = list[0] or 0
 
 ###
 If/Else
@@ -222,7 +235,8 @@ if x < 5 or x > 10 {
 # Assignment from `if`
 define username: String = if user.profile is present as p and p.username is present {
   p.username
-} else "Anonymous"
+} else { "Anonymous" }
+
 
 ###
 Structural types (structs)
@@ -294,11 +308,14 @@ if name is String {
   # do something
 }
 
+# `optional` flag is required if no fallback provided
+define name: String = user with "name" or "No Name"
+
 if user has "name" {
   # do something
 }
 
-define name: String = user with ["name"] or "Brandon" # safely traverse and assign a fallback
+define name: String = user with "name" or "Brandon" # safely traverse and assign a fallback
 # with is only for assignment, not for logic checks
 
 define name: String = user["name"] # invalid, must be `optional String` or use `with` and a fallback
@@ -341,7 +358,7 @@ define user: {String} = {
   name: "Brandon"
 }
 
-each (key, value) in user {
+each (key, value) in user { # key is implicity of type String
   print("#{key} = #{value}")
 }
 
@@ -452,7 +469,7 @@ define Result of (T, E) =
   Ok { data: T }
   or Error { error: E }
 
-define divide = takes (a: Number, b: Number) returns Result of (Number, String) {
+define divide = (a: Number, b: Number): Result of (Number, String) {
   if b equals 0 {
     return Error { error: "Cannot divide by zero" }
   }
@@ -656,7 +673,7 @@ export define User = {
   name: String
 }
 
-export define getUser = takes (id: Number) returns User {
+export define getUser = (id: Number): User {
   { id: id, name: "Brando" }
 }
 
@@ -710,7 +727,7 @@ define Post = Base with Timestamped with {
 ### 
 Async/Await
 ###
-define main = takes () async returns Nothing {
+define async main = (): Nothing {
   define response = await fetchData("https://example.com") # async function returning a `Result`
 
   which response {
@@ -724,7 +741,7 @@ define main = takes () async returns Nothing {
 }
 
 # returns a `Result` with a String `Ok` or a String `Error`
-define fetchData = takes (url: String) async returns Result of (Response, String) {
+define fetchData = (url: String): async Result of (Response, String) {
   # body
 }
 
@@ -738,3 +755,17 @@ define Response = {
 }
 
 # Provide stdlib helpers to wrap a lot of API patterns
+
+###
+Loop Comprehension
+###
+
+define numbers: [Number] = [1, 2, 3, 4, 5, 6]
+define evenSquares: [Number] = each num in numbers where num mod 2 equals 0 do num * num
+# evenSquares = [4, 16, 36]
+
+define whatever: [Number] = each num in numbers
+  where num mod 2 equals 0 or num mod 3 equals 0 # if `num` / 2 or `num` / 3 has no remainder...
+  and where num > 2 # and `num` > 2
+  do num * num # then square `num`
+# whatever = []
