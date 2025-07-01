@@ -6,41 +6,40 @@ To make a variable mutable, add the `mutable` keyword after `define`
 ###
 
 # Primitive types
-define age: Number = 41
-define isTrue: Bool = true
-define name: String = "Brandon"
+define age: number = 41
+define isTrue: bool = true
+define name: string = "Brandon"
 
-define mutable status: String = "active"
+define mutable status: string = "active"
 
+# All variable value re-assignment requires the `set` keyword
 set name = "Brando" # invalid, not mutable
 set status = "inactive" # all good!
 
-# All variable value re-assignment requires the `set` keyword
-
 # Functions (all functions are first-class functions; no function declarations)
 # Because the type is declared when the function is created, no need to specify the type after the name
-define greet = (a: Number, n: String): String {
-  "Hello, #{n}! You are #{a} years old." # implicit return
+define greet = (a: number, n: string): string {
+  return "Hello, #{n}! You are #{a} years old."
 }
 
 greet(41, "Brandon") # "Hello, Brandon! You are 41 years old."
 
 # just does stuff, no return value
-define log = (message: String): Nothing {
+define log = (message: string): nothing {
   print(message)
 }
 
-define oops = (): Nothing {
-  return 42 # invalid, cannot return a value from a `Nothing` function
+define oops = (): nothing {
+  return 42 # invalid, cannot return a value from a `nothing` function
 }
 
 # Default parameters
-define log = (message: String or "Hello"): Nothing {
+define log = (message: string else "hello"): nothing {
   print(message)
 }
 
 # Default parameters with a union
-define log = (message: (Number or String) or "Hello"): Nothing {
+define log = (message: (number or string) else "Hello"): nothing {
   print(message);
 }
 
@@ -49,19 +48,19 @@ log(42) # => 42
 log() # => "Hello"
 
 # Custom returns
-define getCoords = (): (Number, Number) {
-  (10, 20)
+define getCoords = (): (number, number) {
+  return (10, 20)
 }
 
 # Lists
-define numbers: [Number] = [1, 2, 3]
-define users: [User] = [{}, {}, {}] # update with examples
+define numbers: [number] = [1, 2, 3]
+define users: [User] = [{}, {}, {}] # imagine these are Users
 define whatever: [?] = [1, "Brandon", true]
-define union: [Number or String] = [1, "Brandon"]
+define union: [number or string] = [1, "Brandon"]
 
 # Maps
-# Maps use String keys by default, so the key type is omitted but still allowed
-define map: {String} = {
+# Maps use string keys by default, so the key type is omitted but still allowed
+define map: {string} = {
   name: "Brandon"
 }
 
@@ -71,38 +70,38 @@ define map: {?} = {
 }
 
 # Values could be multiple types
-define map: {Bool or Number or String} = {
+define map: {bool or number or string} = {
   name: "Brandon"
 }
 
 # Tuples
-define coords: (Number, Number) = (10, 20)
+define coords: (number, number) = (10, 20)
 
-# Types
-define User = {
+# Shapes
+shape User = {
   age: Number,
   name: String
 }
 
-# Using the type
+# Using the shape
 define user: User = {
   age: 41,
   name: "Brandon"
 }
 
 # Alternatively
-define user: { age: Number, name: String } = {
+define user: { age: number, name: string } = {
   age: 41,
   name: "Brandon"
 }
 
-# Optional types
-define User = {
-  id: Number,
-  name: String,
+# Optional properties in shapes
+shape User = {
+  id: number,
+  name: string,
   profile: optional { # `profile` is optional
-    username: String, # `username` is required and must be a string if `profile` exists
-    website: optional String # `website` is optional
+    username: string, # `username` is required and must be a string if `profile` exists
+    website: optional string # `website` is optional
   }
 }
 define user: User = {
@@ -113,15 +112,15 @@ define user: User = {
 # Accessing an optional property
 # `with` is used for safe optional chaining with fallback for assignment expressions
 # Don't use `with` in conditionals
-define username: String = user with profile with username or user.name # if no, default to "Brandon"
-define username: String = user with profile with username or "No Username" # if no, default to "No Username"
-define username: optional String = user with profile with username # safe because `username` is optional
+define username: string = user with profile with username else user.name # if no, default to "Brandon"
+define username: string = user with profile with username else "No Username" # if no, default to "No Username"
+define username: optional string = user with profile with username # safe because `username` is optional
 
 ***
 Lists
 ***
 
-define list: [Number] = [1, 2, 3]
+define list: [number] = [1, 2, 3]
 define list: [?] = [1, "2", true, {}]
 
 # Accessing data
@@ -129,20 +128,20 @@ define list: [?] = [1, "2", true, {}]
 list[0] # = 1
 
 # Because a value at a particular index could be `absent`, best practice to provide fallbacks
-define first: Number = list[0] or 0
+define first: number = list[0] else 0
 
 ###
 If/Else
 ###
 
-define x: Number = 12
+define x: number = 12
 if x < 10 {
   print(x)
 } else {
   print("x > 10")
 }
 
-define isAdmin: Bool = true
+define isAdmin: bool = true
 if isAdmin {
   # do something
 }
@@ -158,11 +157,11 @@ if username equals "Brando" {
 # Type checks
 # Type checking is structural
 # Type checks check for presence and type
-if x is Number {
+if x is number {
   # do something
 }
 
-define User = {
+shape User = {
   id: Number,
   name: String
 }
@@ -179,13 +178,13 @@ define mapUser: {?} = {
   name: "Brandon"
 }
 
-if mapUser["name"] is String as name {
+if mapUser["name"] is string as name {
   print("name = ${name}")
 }
 
 # Presence/checking
 # Since some things can return `absent`
-define user: {String} = {
+define user: {string} = {
   name: "Brandon"
 }
 
@@ -219,32 +218,24 @@ if user.name is present as username {
 
 # Chained checks
 # `and`/`or`
-if user.profile is present as p and p.role is String and p.role equals "admin" {
+if (user.profile is present as p and p.role is string and p.role equals "admin") {
   # do something
 }
 
-# Alternatively
-if (user.profile is present as p and p.role is String and p.role equals "admin") {
-  # do something
-}
-
-if x < 5 or x > 10 {
+if (x < 5 or x > 10) {
   # do something
 }
 
 # Assignment from `if`
-define username: String = if user.profile is present as p and p.username is present {
-  p.username
-} else { "Anonymous" }
-
+define username: string = if user.profile is present as p and p.username is present then p.username else "Anonymous"
 
 ###
-Structural types (structs)
+Shape types (shapes)
 Instances must be `mutable` to change any value
 ###
-define User = {
-  id: Number,
-  name: String
+shape User = {
+  id: number,
+  name: string
 }
 
 define user: User = {
@@ -259,10 +250,10 @@ define mutable user: User = {
 }
 set user.name = "Brando" # valid
 
-# Partially defined structs
-define User = {
-  id: Number,
-  name: String,
+# Open shapes
+open shape User = {
+  id: number,
+  name: string,
   ...: ? # unknown
   # ...: String
   # ...: Bool or String
@@ -270,27 +261,29 @@ define User = {
   # ...: {String}
 }
 
+# If there is no declared `...` then an `open` shape defaults to `...: ?`
+
 print(user.name) # safe, statically defined
 print(user.whatever) # unsafe
 
 # Optional fields
-define User = {
-  id: Number,
-  name: String,
+shape User = {
+  id: number,
+  name: string,
   status: optional ("active" or "inactive"), # `status` is optional, but if present can only be in the union
   profile: optional { # `profile` is optional
-    username: String, # `username` is required if `profile`
-    url: optional String # `url` is optional
+    username: string, # `username` is required if `profile`
+    url: optional string # `url` is optional
   }
 }
 
 ###
 Maps
-By default, keys are strings so it can be left off in declaration ({String, String})
+By default, keys are strings so it can be left off in declaration ({string, string})
 ###
 
 # A map where all values are strings
-define user: {String} = {
+define user: {string} = {
   id: "1"
 }
 
@@ -299,106 +292,115 @@ define user: {?} = {
   whatever: "whatever"
 }
 
-# This applies to any type, whether defined (e.g. User, [Number], {?}), or a single type or multiple (e.g. {Bool or String})
+# This applies to any type, whether defined (e.g. User, [number], {?}), or a single type or multiple (e.g. {bool or string})
 
 # Fetching data
 # Because maps are dynamic, all fetched values need a presence check (`is` or `has`, or `with`)
-define name: optional String = user["name"]
-if name is String {
+define name: optional string = user["name"]
+if name is string {
   # do something
 }
 
 # `optional` flag is required if no fallback provided
-define name: String = user with "name" or "No Name"
+define name: string = user with "name" else "No Name"
 
 if user has "name" {
   # do something
 }
 
-define name: String = user with "name" or "Brandon" # safely traverse and assign a fallback
+define name: string = user with "name" else "Brandon" # safely traverse and assign a fallback
 # with is only for assignment, not for logic checks
 
-define name: String = user["name"] # invalid, must be `optional String` or use `with` and a fallback
+define name: string = user["name"] # invalid, must be `optional string` or use `with` and a fallback
 
 ###
 Loops
 ###
 
-define x: Number = 0
-while x < 5 {
+define x: number = 0
+while x < 5 do
   print(x)
   set x = x + 1
-}
+end  
 
 # Lists
-define numbers: [Number] = [1, 2, 3]
-each n in numbers {
+define numbers: [number] = [1, 2, 3]
+each n: number in numbers do
   print(n)
-}
+end
 
-each (i, n) in numbers {
+each (i, n) in numbers do
   print("#{i}: #{n}")
-}
-# i is implicitly a Number, type of n is known from when `numbers` was defined
+end
+# i is implicitly a number, type of n is known from when `numbers` was defined
 
 define whatever [?] = [1, "2", true]
-each w in whatever {
-  if w is Number as n {
+each w in whatever do
+  if w is number as n {
     print("number: #{n}")
-  } else if w is String as s {
+  } else if w is string as s {
     print("string: #{s}")
   } else {
     print("other: #{w}")
   }
-}
+end
 
 # Maps
-define user: {String} = {
+define user: {string} = {
   id: "1",
   name: "Brandon"
 }
 
-each (key, value) in user { # key is implicity of type String
+each (key, value) in user do # key is implicity of type string, value was statically typed as string
   print("#{key} = #{value}")
-}
+end
 
-# Structs
-each (field, value) in user {
+# Shapes
+each (field, value) in user do
   print("#{field}: #{value}")
-}
+end
 
-# Skip/exit
-each n in numbers {
+# Additionally, you can loop over defined/extra fields on open shapes specifically
+each defined (field, value) in user do
+  # do smething
+end
+
+each extra (field, value: ?) in user do # type must be declared as ? or whatever it was set to in the shape
+  # do something
+end
+
+# Skip/stop
+each n: number in numbers do
   if n equals 3 {
-    exit each  # stop loop early
+    stop  # stop loop early
   }
   if n mod 2 equals 0 {
     skip  # skip even numbers before 3
   }
   print(n)  # prints: 1, then stops at 3
-}
+end
 
 # Ranges
 
 # Inclusive
-each i in 0 to 5 {
+each i from 0 to 5 do
   print(i)
-}
+end
 
 # Exclusive
-each i in 0 until 5 {
+each i from 0 until 5 do
   print(i)
-}
+end
 
 ###
 Destructuring
 ###
 
 # Tuples
-define coords: (Number, Number) = (10, 20)
-define (x, y): (Number, Number) = coords
-print(x)  # 10
-print(y)  # 20
+define coords: (number, number) = (10, 20)
+define (x, y): (number, number) = coords
+print(x) # 10
+print(y) # 20
 
 # Maps
 define settings: {?} = {
@@ -406,16 +408,16 @@ define settings: {?} = {
   theme: "light"
 }
 
-define { fontSize or 12 as size: Number, theme or "dark": String } = settings
+define { fontSize as size: string else 12, theme: string else "dark" } = settings
 
-print(theme) # "dark"... would equal "dark" if `theme` didn't exist or wasn't a string
+print(theme) # "light"... would equal "dark" if `theme` didn't exist or wasn't a string
 print(size) # 14... would equal 12 if `fontSize` didn't exist or wasn't a number
 
-# Structs
-# Structs require a type annotation that the instance inherited from
-define User = {
-  id: Number,
-  name: String,
+# Shapes
+# Shapes require a type annotation that the instance inherited from
+shape User = {
+  id: number,
+  name: string,
   status: optional ("active" or "inactive")
 }
 
@@ -429,11 +431,11 @@ define { id as userId, name, status or "inactive" }: User = user
 print(userId) # 42
 print(status) # "inactive" (default used since missing)
 
-define User = {
-  id: Number,
-  name: String,
-  email: optional String,
-  status: optional String
+shape User = {
+  id: number,
+  name: string,
+  email: optional string,
+  status: optional string
 }
 
 define mutable user: User = {
@@ -456,7 +458,7 @@ print(remaining.email or "hello@example.com")
 
 # Lists
 # List require a type annotation
-define [x, y, &remaining]: [Number] = [10]
+define [x, y, &remaining]: [number] = [10]
 # x = 10
 # y = `absent`
 # `remaining` = []
