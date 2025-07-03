@@ -532,39 +532,35 @@ Type Aliases and Composition
 
 # Built-in `Result` type
 # BS supports generic types
-define Result of (O, E) = 
-  Ok { data: O } or
-  Error { error: E }
 
-define ID = Number
-
-# Base struct
-define Base = {
-  id: ID,
-  createdAt: String
+# Base sjape
+shape Base = {
+  id: number,
+  createdAt: string
 }
 
 # User composed with Base
-define User = Base with {
-  name: String
+shape User = shape from Base with {
+  name: string
 }
 
 # Admin composed with User
-define Admin = User with {
-  permissions: [String]
+shape Admin = shape from User with {
+  permissions: [string]
 }
 
-define Timestamped = {
-  createdAt: String,
-  updatedAt: optional String
+shape Timestamped = {
+  createdAt: string,
+  updatedAt: optional string
 }
 
-define Post = Base with Timestamped with {
-  body: String,
-  title: String
+shape Post = shape from [Base, Timestamped] with {
+  body: string,
+  title: string
 }
 
 # If `with` leads to a conflict (same key with different types) it leads to a compilation error
+# Any shape from an `open shape` will by default be open
 
 ### 
 Async/Await
