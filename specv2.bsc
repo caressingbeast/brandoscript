@@ -116,9 +116,9 @@ define username: string = user with profile with username else user.name # if no
 define username: string = user with profile with username else "No Username" # if no, default to "No Username"
 define username: optional string = user with profile with username # safe because `username` is optional
 
-***
+###
 Lists
-***
+###
 
 define list: [number] = [1, 2, 3]
 define list: [?] = [1, "2", true, {}]
@@ -129,6 +129,19 @@ list[0] # = 1
 
 # Because a value at a particular index could be `absent`, best practice to provide fallbacks
 define first: number = list[0] else 0
+
+define last: optional number = last of list # must be `optional` without a fallback
+define last: number = last of list else 0
+define listLength: number = length of list
+
+define updatedList: [number] = extend list with 4 # [1, 2, 3, 4]
+define updatedList: [number] = extend list with [4, 5] # [1, 2, 3, 4, 5]
+define updatedList: [number] = insert 4 at 1 into list # [1, 4, 2, 3]
+define updatedList: [number] = insert [4, 5] at 1 into list # [1, 4, 5, 2, 3]
+define updatedList: [number] = remove at 2 from list # [1, 2]
+# an index outside the bounds just returns the existing array
+
+set list[0] = 10 # [10, 2, 3]
 
 ###
 If/Else
@@ -162,8 +175,8 @@ if x is number {
 }
 
 shape User = {
-  id: Number,
-  name: String
+  id: number,
+  name: string
 }
 define user: User = {
   id: 1,
@@ -179,7 +192,7 @@ define mapUser: {?} = {
 }
 
 if mapUser["name"] is string as name {
-  print("name = ${name}")
+  print("name = #{name}")
 }
 
 # Presence/checking
@@ -260,7 +273,6 @@ open shape User = {
   # ...: [Number]
   # ...: {String}
 }
-
 # If there is no declared `...` then an `open` shape defaults to `...: ?`
 
 print(user.name) # safe, statically defined
@@ -311,7 +323,7 @@ if user has "name" {
 define name: string = user with "name" else "Brandon" # safely traverse and assign a fallback
 # with is only for assignment, not for logic checks
 
-define name: string = user["name"] # invalid, must be `optional string` or use `with` and a fallback
+define name: string = user["name"] # invalid, must be `optional string` or a fallback
 
 ###
 Loops
@@ -325,7 +337,7 @@ end
 
 # Lists
 define numbers: [number] = [1, 2, 3]
-each n: number in numbers do
+each n in numbers do
   print(n)
 end
 
@@ -335,7 +347,7 @@ end
 # i is implicitly a number, type of n is known from when `numbers` was defined
 
 define whatever [?] = [1, "2", true]
-each w in whatever do
+each w: ? in whatever do
   if w is number as n {
     print("number: #{n}")
   } else if w is string as s {
@@ -355,6 +367,10 @@ each (key, value) in user do # key is implicity of type string, value was static
   print("#{key} = #{value}")
 end
 
+each (_, value) in user do # ignore key with `_`
+  # do something
+end
+
 # Shapes
 each (field, value) in user do
   print("#{field}: #{value}")
@@ -370,7 +386,7 @@ each extra (field, value: ?) in user do # type must be declared as ? or whatever
 end
 
 # Skip/stop
-each n: number in numbers do
+each n in numbers do
   if n equals 3 {
     stop  # stop loop early
   }
@@ -426,7 +442,7 @@ define user: User = {
   name: "Brandon"
 }
 
-define { id as userId, name, status or "inactive" }: User = user
+define { id as userId, name, status else "inactive" }: User = user
 
 print(userId) # 42
 print(status) # "inactive" (default used since missing)
@@ -454,7 +470,7 @@ if remaining.status is present {
   print(remaining.status)
 }
 
-print(remaining.email or "hello@example.com")
+print(remaining.email else "hello@example.com")
 
 # Lists
 # List require a type annotation
@@ -471,7 +487,7 @@ define Result of (T, E) =
   Ok { data: T }
   or Error { error: E }
 
-define divide = (a: Number, b: Number): Result of (Number, String) {
+define divide = (a: number, b: number): Result of (number, string) {
   if b equals 0 {
     return Error { error: "Cannot divide by zero" }
   }
@@ -479,190 +495,14 @@ define divide = (a: Number, b: Number): Result of (Number, String) {
 }
 
 ###
-Which
-The `which` expression lets you examine a value and execute code based on which pattern it matches. It’s ideal for working with tagged unions, structs, literals, and more, providing clear, concise, and expressive control flow.
-which <expression> {
-  <pattern_1> {
-    <block_1>
-  }
-  <pattern_2> {
-    <block_2>
-  }
-  ...
-  _ {
-    <fallback_block>
-  }
+Given
+The `given` expression lets you examine a value and execute code based on which pattern it matches. It's ideal for working with tagged unions, shapes, literals, and more, providing clear, concise, and expressive control flow.
+given <value> {
+  is <Type> then { ... }
+  matches { key: Type else fallback, ... }
+  equals <literal> then { ... }
 }
 ###
-
-# `Result` matching
-which result {
-  Ok { data } {
-    print("data: #{data}")
-  }
-  Error { error } {
-    print("error: #{error}")
-  }
-  _ {
-    print("Unknown")
-  }
-}
-
-# Structs
-define User = {
-  id: Number,
-  name: String,
-  status: optional String
-}
-
-define user: User = {
-  id: 1,
-  name: "Alice"
-}
-
-which user {
-  { id, name, status } {
-    print("#{name}, #{id}, #{status or 'unknown'}") # would print `absent` for status without fallback
-  }
-  _ {
-    print("Not a User")
-  }
-}
-
-# Literals
-define x: Number = 0
-which x {
-  0 {
-    print("0")
-  }
-  1 {
-    print("1")
-  }
-  _ {
-    print(x)
-  }
-}
-
-# Assignment
-define result = divide(10, 0) # `divide` returns a `Result`
-
-define message: String = which result {
-  Ok { data } {
-    "Success: #{data}"
-  }
-  Error { error } {
-    "Error: #{error}"
-  }
-  _ {
-    "Unknown result"
-  }
-}
-
-print(message) # Should be "Error: Cannot divide by zero"
-
-# Maps
-# Because maps are dynamic, types must be specified
-# `which` checks for presence and type match
-# You can't access &rest in `which`
-define user: {?} = {
-  age: 41,
-  name: "Brandon",
-  status: "active"
-}
-
-which user {
-  { age: Number, name: String } {
-    print("Hello, #{name}!")
-  }
-}
-
-which user {
-  { age: String, name: String } {
-    # arm is skipped because age is a Number
-  }
-}
-
-# Lists
-
-# Matches a list of just 2 numbers
-which numbers {
-  [x: Number, y: Number] {
-    # do something
-  }
-  _ {
-    # do something else
-  }
-}
-
-# Match first element, capture rest
-which numbers {
-  [head: Number, &tail: [Number]] { # only matches if `head` is a Number and the rest of the list is all numbers
-    # do something
-  }
-}
-
-# Match with an array of at least 2 elements, ignore the rest
-which numbers {
-  [a: Number, b: Number, ...] {
-    # do something
-  }
-}
-
-# Wildcard to ignore specific elements
-which numbers {
-  [_, _, third: Number, _] { # matches on a list of 4 elements, of which the element[2] is a Number
-    print(third)
-  }
-}
-
-# Advanced match
-which numbers {
-  [first: Number, ...] if first > 0 { # only matches if `first` is a Number and greater than 0
-    # do something
-  }
-}
-
-
-define mixed: [?] = [1, "two", true, 4]
-
-which mixed {
-  # First element is Number, second is String, rest any
-  [first: Number, second: String, &rest: [?]] {
-    # do something
-  }
-  
-  # First element is String or Bool
-  [head: (String or Bool), &tail: [?]] {
-    # do something
-  }
-  
-  # Fallback
-  _ {
-    # do something
-  }
-}
-
-# Guards with pattern matching
-which user {
-  { status as s: String } if s equals "active" { 
-    print("User is active!")
-  }
-
-  { status as s: String } if s equals "inactive" {
-    print("User is inactive!")
-  }
-
-  _ {
-    print(user.status)
-  }
-}
-
-# Tuples
-which point {
-  (x: Number, _, z: Number) {
-    # do something
-  }
-}
 
 ###
 Importing/Exporting
@@ -670,13 +510,13 @@ Applies to types, values, functions — anything defined.
 ###
 
 # Exporting
-export define User = {
-  id: Number,
-  name: String
+export shape User = {
+  id: number,
+  name: string
 }
 
 export define getUser = (id: Number): User {
-  { id: id, name: "Brando" }
+  return { id: id, name: "Brando" }
 }
 
 # Importing
@@ -729,31 +569,31 @@ define Post = Base with Timestamped with {
 ### 
 Async/Await
 ###
-define async main = (): Nothing {
+define async main = (): nothing {
   define response = await fetchData("https://example.com") # async function returning a `Result`
 
-  which response {
+  given response {
     Ok { data } {
-      print("Success: #{value}")
+      print("Success: #{data}")
     }
     Error { error } {
-      print("Failed: #{reason}")
+      print("Failed: #{error}")
     }
   }
 }
 
-# returns a `Result` with a String `Ok` or a String `Error`
-define fetchData = (url: String): async Result of (Response, String) {
+# returns a `Result` with a string `Ok` or a string `Error`
+define fetchData = (url: string): async Result of (Response, string) {
   # body
 }
 
 # Built-in `Response` type
 define Response = {
-  ok: Bool,
-  status: Number,
+  ok: bool,
+  status: number,
   headers: {?},
-  json: async returns Result of ({?}, String),
-  text: async returns Result of (String, String)
+  json: async (): Result of ({?}, string),
+  text: async (): Result of (string, string)
 }
 
 # Provide stdlib helpers to wrap a lot of API patterns
