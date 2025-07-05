@@ -580,11 +580,25 @@ shape Post = shape from [Base, Timestamped] with {
 # If `with` leads to a conflict (same key with different types) it leads to a compilation error
 # Any shape from an `open shape` will by default be open
 
+###
+Try / Else
+###
+define eventual fetchUser = (id: number): Result of (User, string) {
+  # do API call
+}
+
+try {
+  define user = expect fetchUser(1) # automatically unwrapped in a try/else block
+  print(user.name)
+} else err {
+  print(err)
+}
+
 ### 
 Async/Await
 BS uses `eventual` and `expect`/`await`
-`expect` is used for `eventual` functions that return a value
-`await` is used for `eventual` functions that don't return a value (timers, etc.)
+`expect` is used for `eventual` functions that return a Result
+`await` is used for `eventual` functions that don't return a Result
 ###
 define eventual main = (): nothing {
   define response = expect fetchData("https://example.com") # eventual function returning a `Result`
@@ -603,7 +617,7 @@ define eventual main = (): nothing {
 define eventual delay = (ms: number): nothing {
   # pause for `ms`
 }
-# await delay(1000)
+await delay(1000)
 
 # returns a `Result` with a string `Ok` or a string `Error`
 define eventual fetchData = (url: string): Result of (Response, string) {
