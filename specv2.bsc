@@ -43,6 +43,17 @@ define log = (message: (number or string) else "Hello"): nothing {
   print(message);
 }
 
+# Closures
+define outer = (n: number): (number) >> number {
+  define original: number = n
+  
+  define inner = (x: number): number {
+    return original + x
+  }
+
+  return inner
+}
+
 log("Yo!") # => "Yo!"
 log(42) # => 42
 log() # => "Hello"
@@ -54,7 +65,7 @@ define getCoords = (): (number, number) {
 
 # Lists
 define numbers: [number] = [1, 2, 3]
-define users: [User] = [{}, {}, {}] # imagine these are Users
+define users: [User] = [{}, {}, {}] 
 define whatever: [?] = [1, "Brandon", true]
 define union: [number or string] = [1, "Brandon"]
 
@@ -76,6 +87,9 @@ define map: {bool or number or string} = {
 
 # Tuples
 define coords: (number, number) = (10, 20)
+define coords: (x: number, y: number) = (0, 1)
+# coords.x = 0
+# coords.y = 1
 
 # Shapes
 shape User = {
@@ -114,7 +128,7 @@ define user: User = {
 # Don't use `with` in conditionals
 define username: string = user with profile with username else user.name # if no, default to "Brandon"
 define username: string = user with profile with username else "No Username" # if no, default to "No Username"
-define username: optional string = user with profile with username # safe because `username` is optional
+define username: maybe string = user with profile with username # safe because `username` is optional
 
 ###
 Lists
@@ -130,7 +144,7 @@ list[0] # = 1
 # Because a value at a particular index could be `absent`, best practice to provide fallbacks
 define first: number = list[0] else 0
 
-define last: optional number = last of list # must be `optional` without a fallback
+define last: maybe number = last of list # must be `maybe` without a fallback
 define last: number = last of list else 0
 define listLength: number = length of list
 
@@ -308,12 +322,12 @@ define user: {?} = {
 
 # Fetching data
 # Because maps are dynamic, all fetched values need a presence check (`is` or `has`, or `with`)
-define name: optional string = user["name"]
+define name: maybe string = user["name"]
 if name is string {
   # do something
 }
 
-# `optional` flag is required if no fallback provided
+# `maybe` flag is required if no fallback provided
 define name: string = user with "name" else "No Name"
 
 if user has "name" {
@@ -323,7 +337,7 @@ if user has "name" {
 define name: string = user with "name" else "Brandon" # safely traverse and assign a fallback
 # with is only for assignment, not for logic checks
 
-define name: string = user["name"] # invalid, must be `optional string` or a fallback
+define name: string = user["name"] # invalid, must be `maybe string` or a fallback
 
 ###
 Loops
@@ -414,7 +428,7 @@ Destructuring
 
 # Tuples
 define coords: (number, number) = (10, 20)
-define (x, y): (number, number) = coords
+define (x, y) = coords
 print(x) # 10
 print(y) # 20
 
@@ -430,7 +444,6 @@ print(theme) # "light"... would equal "dark" if `theme` didn't exist or wasn't a
 print(size) # 14... would equal 12 if `fontSize` didn't exist or wasn't a number
 
 # Shapes
-# Shapes require a type annotation that the instance inherited from
 shape User = {
   id: number,
   name: string,
@@ -442,7 +455,7 @@ define user: User = {
   name: "Brandon"
 }
 
-define { id as userId, name, status else "inactive" }: User = user
+define { id as userId, name, status else "inactive" } = user
 
 print(userId) # 42
 print(status) # "inactive" (default used since missing)
@@ -454,13 +467,15 @@ shape User = {
   status: optional string
 }
 
+shape PartialUser = Omit(User, ["id"])
+
 define mutable user: User = {
   id: 1,
   name: "Alice"
   # status and email are missing here, which is valid
 }
 
-define { id, &remaining }: User = user # `remaining` is a variable name, could be `rest` or whatever
+define { id, &remaining: PartialUser } = user # `remaining` is a variable name, could be `rest` or whatever
 
 print(id)         # 1
 print(remaining)  # { name: "Alice", status: absent, email: absent }
@@ -474,17 +489,20 @@ print(remaining.email else "hello@example.com")
 
 # Lists
 # List require a type annotation
-define [x, y, &remaining]: [number] = [10]
+define list: [number] = [10]
+define [x: maybe number, y: maybe number, &remaining] = list
 # x = 10
 # y = `absent`
 # `remaining` = []
+
+define [x: number else 0, y: number else 0] = list
 
 ###
 Error Handling
 BrandoScript does not support `throw`. Errors must be handled via the built-in `Result` type
 ###
-define Result of (T, E) =
-  Ok { data: T }
+type Result of (O, E) =
+  Ok { data: O }
   or Error { error: E }
 
 define divide = (a: number, b: number): Result of (number, string) {
@@ -515,7 +533,7 @@ export shape User = {
   name: string
 }
 
-export define getUser = (id: Number): User {
+export define getUser = (id: number): User {
   return { id: id, name: "Brando" }
 }
 
@@ -533,7 +551,7 @@ Type Aliases and Composition
 # Built-in `Result` type
 # BS supports generic types
 
-# Base sjape
+# Base shape
 shape Base = {
   id: number,
   createdAt: string
@@ -564,9 +582,12 @@ shape Post = shape from [Base, Timestamped] with {
 
 ### 
 Async/Await
+BS uses `eventual` and `expect`/`await`
+`expect` is used for `eventual` functions that return a value
+`await` is used for `eventual` functions that don't return a value (timers, etc.)
 ###
-define async main = (): nothing {
-  define response = await fetchData("https://example.com") # async function returning a `Result`
+define eventual main = (): nothing {
+  define response = expect fetchData("https://example.com") # eventual function returning a `Result`
 
   given response {
     Ok { data } {
@@ -578,8 +599,14 @@ define async main = (): nothing {
   }
 }
 
+# For async functions with no return
+define eventual delay = (ms: number): nothing {
+  # pause for `ms`
+}
+# await delay(1000)
+
 # returns a `Result` with a string `Ok` or a string `Error`
-define fetchData = (url: string): async Result of (Response, string) {
+define eventual fetchData = (url: string): Result of (Response, string) {
   # body
 }
 
