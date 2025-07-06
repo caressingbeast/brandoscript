@@ -513,6 +513,17 @@ define divide = (a: number, b: number): Result of (number, string) {
 }
 
 ###
+Types
+###
+type MapFn = (number) >> number
+define transform = (n: number, fn: MapFn): number {
+  # do something
+}
+
+type Thing = bool or number or string
+define listOfThings: Thing = []
+
+###
 Given
 The `given` expression lets you examine a value and execute code based on which pattern it matches. It's ideal for working with tagged unions, shapes, literals, and more, providing clear, concise, and expressive control flow.
 given <value> {
@@ -594,6 +605,13 @@ try {
   print(err)
 }
 
+###
+Strings
+###
+
+define name: string = "Ted"
+define chars: [string] = list from name # ["T", "e", "d"]
+
 ### 
 Async/Await
 BS uses `eventual` and `expect`/`await`
@@ -619,7 +637,7 @@ define eventual delay = (ms: number): nothing {
 }
 await delay(1000)
 
-# returns a `Result` with a string `Ok` or a string `Error`
+# returns a `Result` with a Response `Ok` or a string `Error`
 define eventual fetchData = (url: string): Result of (Response, string) {
   # body
 }
@@ -639,11 +657,11 @@ define Response = {
 Loop Comprehension
 ###
 
-define numbers: [Number] = [1, 2, 3, 4, 5, 6]
-define evenSquares: [Number] = each num in numbers where num mod 2 equals 0 do num * num
+define numbers: [number] = [1, 2, 3, 4, 5, 6]
+define evenSquares: [number] = each num in numbers where num mod 2 equals 0 do num * num
 # evenSquares = [4, 16, 36]
 
-define whatever: [Number] = each num in numbers
+define whatever: [number] = each num in numbers
   where num mod 2 equals 0 or num mod 3 equals 0 # if `num` / 2 or `num` / 3 has no remainder...
   and where num > 2 # and `num` > 2
   do num * num # then square `num`
