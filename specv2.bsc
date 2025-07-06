@@ -86,7 +86,11 @@ define map: {bool or number or string} = {
 }
 
 # Tuples
+# Tuples support names
 define coords: (number, number) = (10, 20)
+print(coords.0) # 10
+print(coords.1) # 20
+
 define coords: (x: number, y: number) = (0, 1)
 # coords.x = 0
 # coords.y = 1
@@ -612,6 +616,8 @@ Strings
 define name: string = "Ted"
 define chars: [string] = list from name # ["T", "e", "d"]
 
+define strLen: number = length of name # 3
+
 ### 
 Async/Await
 BS uses `eventual` and `expect`/`await`
@@ -666,3 +672,57 @@ define whatever: [number] = each num in numbers
   and where num > 2 # and `num` > 2
   do num * num # then square `num`
 # whatever = []
+
+###
+Standard Library
+###
+
+# Strings
+# split
+# join
+# replace
+# includes
+# uppercase
+# lowercase
+# trim
+
+define split = (input: string, delimiter: string): [string] {
+  define inputList: [] = list from input
+
+  define mutable buffer: string = ""
+  define mutable i: number = 0
+  define mutable result: [string] = []
+
+  while i < length of inputList do
+    define char: string = inputList[i]
+    if char equals delimiter {
+      set result = extend result with buffer
+      set buffer = ""
+    } else {
+      set buffer = "#{buffer}${char}"
+    }
+
+    set i = i + 1
+  end
+
+  if not buffer equals "" {
+    set buffer = extend result with buffer
+  }
+
+  return result
+}
+
+# Lists
+# transform (map)
+# aggregate (reduce)
+# filter
+# find
+# includes
+# sort
+# reverse
+
+# Math
+# min
+# max
+# roundUp
+# roundDown
