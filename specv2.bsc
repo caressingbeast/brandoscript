@@ -159,6 +159,13 @@ define updatedList: [number] = insert [4, 5] at 1 into list # [1, 4, 5, 2, 3]
 define updatedList: [number] = remove at 2 from list # [1, 2]
 # an index outside the bounds just returns the existing array
 
+define (updated, removed: maybe number) = extract at 2 from list
+# updated = [1, 2]
+# removed = 3
+
+define slicedList: [number] = copy from 0 to 1 from list # [1, 2] inclusive
+define slicedList: [number] = copy from 0 until 1 from list # [1] exclusive
+
 set list[0] = 10 # [10, 2, 3]
 
 ###
@@ -342,6 +349,10 @@ define name: string = user with "name" else "Brandon" # safely traverse and assi
 # with is only for assignment, not for logic checks
 
 define name: string = user["name"] # invalid, must be `maybe string` or a fallback
+
+define key: string = "name" 
+# user[key]
+# user with [key] else "No Name"
 
 ###
 Loops
