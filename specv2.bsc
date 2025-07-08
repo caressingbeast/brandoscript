@@ -737,3 +737,22 @@ define split = (input: string, delimiter: string): [string] {
 # max
 # roundUp
 # roundDown
+
+###
+Piping
+###
+
+define double = (n: number): number {
+  return n * 2
+}
+
+define square = (n: number): number {
+  return n * n
+}
+
+define result: number = take 5 then [double, square] # => 100
+
+define result: number = take 5 then [
+  (n: number): number -> n * 2,
+  (n: number): number -> n * n
+]
